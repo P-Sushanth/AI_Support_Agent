@@ -2,11 +2,11 @@ import os
 import sys
 import json
 import random
+from src.agent.client import LLMClient
 from src.agent.agent import BaselineSupportAgent
 from src.agent.rag_agent import RAGSupportAgent
 from src.agent.schemas import CustomerTicketInput
 
-# ANSI Colors for terminal UI
 CYAN = "\033[96m"
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
@@ -14,11 +14,14 @@ RED = "\033[91m"
 BOLD = "\033[1m"
 RESET = "\033[0m"
 
-def print_header():
+AVAILABLE_MODELS = ["qwen3.5:2b", "qwen3.5:9b", "gemma4:12b"]
+
+def print_header(current_model: str):
     print(f"\n{BOLD}{CYAN}========================================================================{RESET}")
-    print(f"{BOLD}{CYAN}          AI CUSTOMER SUPPORT AGENT — INTERACTIVE TERMINAL CLI         {RESET}")
+    print(f"{BOLD}{CYAN}      AI CUSTOMER SUPPORT AGENT — OLLAMA INTERACTIVE TERMINAL CLI       {RESET}")
     print(f"{BOLD}{CYAN}========================================================================{RESET}")
-    print(f"Commands: {YELLOW}/mode{RESET} (toggle Baseline/RAG) | {YELLOW}/sample{RESET} (test random ticket) | {YELLOW}/quit{RESET} (exit)")
+    print(f"Active Model: {BOLD}{GREEN}{current_model}{RESET} (Local Ollama Engine)")
+    print(f"Commands: {YELLOW}/mode{RESET} (toggle RAG/Baseline) | {YELLOW}/model{RESET} (switch model) | {YELLOW}/sample{RESET} (test random ticket) | {YELLOW}/quit{RESET}")
     print("------------------------------------------------------------------------\n")
 
 def load_sample_tickets():
@@ -32,19 +35,25 @@ def load_sample_tickets():
     return samples
 
 def run_cli():
-    print_header()
+    current_model_idx = 0
+    current_model = AVAILABLE_MODELS[current_model_idx]
     
-    baseline_agent = BaselineSupportAgent()
-    rag_agent = RAGSupportAgent()
-    current_mode = "RAG" # Default to RAG Agent
+    client = LLMClient(provider="ollama", model_name=current_model)
+    baseline_agent = BaselineSupportAgent(client=client)
+    rag_agent = RAGSupportAgent(client=client)
+    
+    current_mode = "RAG"
     sample_tickets = load_sample_tickets()
     
+    print_header(current_model)
     ticket_counter = 100
     
     while True:
         mode_badge = f"{GREEN}[RAG AGENT]{RESET}" if current_mode == "RAG" else f"{YELLOW}[BASELINE LLM]{RESET}"
+        model_badge = f"{CYAN}[{current_model}]{RESET}"
+        
         try:
-            user_input = input(f"{BOLD}Customer Query {mode_badge} > {RESET}").strip()
+            user_input = input(f"{BOLD}Customer Query {mode_badge} {model_badge} > {RESET}").strip()
         except (KeyboardInterrupt, EOFError):
             print(f"\n{YELLOW}Exiting AI Support Agent CLI. Goodbye!{RESET}")
             break
@@ -60,8 +69,17 @@ def run_cli():
             current_mode = "Baseline" if current_mode == "RAG" else "RAG"
             print(f"{BOLD}Switched mode to: {current_mode}{RESET}\n")
             continue
+        elif cmd == "/model":
+            current_model_idx = (current_model_idx + 1) % len(AVAILABLE_MODELS)
+            current_model = AVAILABLE_MODELS[current_model_idx]
+            
+            client = LLMClient(provider="ollama", model_name=current_model)
+            baseline_agent = BaselineSupportAgent(client=client)
+            rag_agent = RAGSupportAgent(client=client)
+            print(f"\n{BOLD}{GREEN}Switched local Ollama model to: {current_model}{RESET}\n")
+            continue
         elif cmd == "/help":
-            print_header()
+            print_header(current_model)
             continue
         elif cmd == "/sample":
             if not sample_tickets:
@@ -77,7 +95,7 @@ def run_cli():
         t_id = f"CLI-{ticket_counter}"
         inp = CustomerTicketInput(ticket_id=t_id, customer_message=user_input)
         
-        # Process query
+        # Process query with selected model and mode
         if current_mode == "RAG":
             res = rag_agent.process_ticket(inp, use_cache=False)
         else:
@@ -85,8 +103,7 @@ def run_cli():
             
         output = res["output"]
         
-        # Format response banner
-        print(f"\n{BOLD}{CYAN}------------------- AGENT RESPONSE -------------------{RESET}")
+        print(f"\n{BOLD}{CYAN}------------------- AGENT RESPONSE ({current_model}) -------------------{RESET}")
         print(f"{BOLD}Intent:{RESET}       {output['intent']}")
         print(f"{BOLD}Confidence:{RESET}   {output['confidence']*100:.1f}%")
         
@@ -99,6 +116,7 @@ def run_cli():
             reason_str = ""
             
         print(f"{BOLD}Action:{RESET}       {esc_badge}{reason_str}")
+        print(f"{BOLD}Latency:{RESET}      {res.get('latency_ms', 0):.1f} ms")
         
         if current_mode == "RAG" and res.get("retrieved_documents"):
             print(f"\n{BOLD}Retrieved Knowledge Sources:{RESET}")
@@ -106,7 +124,7 @@ def run_cli():
                 print(f"  • [{doc['doc_id']}] (Score: {doc['score']:.3f}) {doc['text'][:80]}...")
                 
         print(f"\n{BOLD}Response Message:{RESET}\n{output['response']}")
-        print(f"{BOLD}{CYAN}------------------------------------------------------{RESET}\n")
+        print(f"{BOLD}{CYAN}-----------------------------------------------------------------------{RESET}\n")
 
 if __name__ == "__main__":
     run_cli()

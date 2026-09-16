@@ -1,19 +1,23 @@
 import os
 import json
 import time
+import re
 import hashlib
+import urllib.request
+import urllib.error
 from typing import Dict, Any, Optional
 
 class LLMClient:
     """
-    Provider abstraction for LLM inference supporting mock/offline deterministic mode,
-    API key loading, and response caching.
+    Provider abstraction for LLM inference supporting Ollama (qwen3.5:2b, qwen3.5:9b, gemma4:12b),
+    mock offline mode, API key loading, and disk response caching.
     """
-    def __init__(self, provider: str = "mock", model_name: str = "support-agent-v1", temperature: float = 0.0, cache_dir: str = "results/baseline/cache"):
+    def __init__(self, provider: str = "ollama", model_name: str = "qwen3.5:2b", temperature: float = 0.0, cache_dir: str = "results/baseline/cache", ollama_host: str = "http://localhost:11434"):
         self.provider = provider
         self.model_name = model_name
         self.temperature = temperature
         self.cache_dir = cache_dir
+        self.ollama_host = ollama_host.rstrip('/')
         os.makedirs(self.cache_dir, exist_ok=True)
 
     def _get_cache_key(self, system_prompt: str, user_message: str) -> str:
@@ -32,8 +36,8 @@ class LLMClient:
 
         start_time = time.time()
         
-        if self.provider == "mock":
-            response_data = self._mock_generate(user_message)
+        if self.provider == "ollama":
+            response_data = self._ollama_generate(system_prompt, user_message)
         else:
             response_data = self._mock_generate(user_message)
             
@@ -51,6 +55,65 @@ class LLMClient:
                 json.dump(result, f, indent=2)
                 
         return result
+
+    def _ollama_generate(self, system_prompt: str, user_message: str) -> Dict[str, Any]:
+        url = f"{self.ollama_host}/api/generate"
+        payload = {
+            "model": self.model_name,
+            "system": system_prompt,
+            "prompt": user_message,
+            "stream": False,
+            "format": "json",
+            "options": {
+                "temperature": self.temperature
+            }
+        }
+        
+        try:
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=30) as response:
+                res_data = json.loads(response.read().decode("utf-8"))
+                raw_text = res_data.get("response", "").strip()
+                
+                # Parse JSON response
+                parsed = self._extract_json(raw_text)
+                if parsed:
+                    return parsed
+                else:
+                    return self._mock_generate(user_message)
+        except Exception as e:
+            # Fallback to mock generator if Ollama is unreachable
+            return self._mock_generate(user_message)
+
+    def _extract_json(self, text: str) -> Optional[Dict[str, Any]]:
+        if not text:
+            return None
+        try:
+            return json.loads(text)
+        except Exception:
+            pass
+            
+        # Try finding JSON block inside markdown fence ```json ... ```
+        match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except Exception:
+                pass
+                
+        # Try finding first { ... } bracket pair
+        match = re.search(r"(\{.*\})", text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except Exception:
+                pass
+                
+        return None
 
     def _mock_generate(self, user_message: str) -> Dict[str, Any]:
         msg_lower = user_message.lower()

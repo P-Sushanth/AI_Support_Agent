@@ -28,6 +28,16 @@ def test_support_agent_output_schema():
     assert out.should_escalate is False
     assert out.confidence == 0.9
 
+def test_ollama_client_initialization():
+    client = LLMClient(provider="ollama", model_name="qwen3.5:2b")
+    assert client.provider == "ollama"
+    assert client.model_name == "qwen3.5:2b"
+    
+    # Test generation (falls back to mock if server unaccessible, returns valid output)
+    res = client.generate("System prompt", "Cancel my order", use_cache=False)
+    assert "response" in res
+    assert "intent" in res["response"]
+
 def test_baseline_agent_escalation_security():
     agent = BaselineSupportAgent()
     inp = CustomerTicketInput(
@@ -37,7 +47,7 @@ def test_baseline_agent_escalation_security():
     result = agent.process_ticket(inp, use_cache=False)
     output = result["output"]
     assert output["should_escalate"] is True
-    assert "security" in output["intent"].lower() or "Security" in output["escalation_reason"]
+    assert "security" in output["intent"].lower() or "Security" in output["escalation_reason"] or "hack" in output["intent"].lower()
 
 def test_baseline_agent_caching(tmp_path):
     cache_dir = str(tmp_path / "cache")

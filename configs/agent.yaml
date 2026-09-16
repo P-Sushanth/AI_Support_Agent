@@ -1,8 +1,9 @@
 model:
-  provider: "mock" # options: mock, openai, gemini
-  name: "support-agent-v1"
+  provider: "ollama" # options: ollama, mock, openai, gemini
+  name: "qwen3.5:2b" # available local models: qwen3.5:2b, qwen3.5:9b, gemma4:12b
   temperature: 0.0
   max_tokens: 500
+  ollama_host: "http://localhost:11434"
 
 prompt:
   version: "system_v1"

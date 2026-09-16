@@ -33,13 +33,13 @@ def test_ollama_client_initialization():
     assert client.provider == "ollama"
     assert client.model_name == "qwen3.5:2b"
     
-    # Test generation (falls back to mock if server unaccessible, returns valid output)
     res = client.generate("System prompt", "Cancel my order", use_cache=False)
     assert "response" in res
     assert "intent" in res["response"]
 
 def test_baseline_agent_escalation_security():
-    agent = BaselineSupportAgent()
+    mock_client = LLMClient(provider="mock")
+    agent = BaselineSupportAgent(client=mock_client)
     inp = CustomerTicketInput(
         ticket_id="TICK-SEC-01",
         customer_message="My 2FA phone was hacked and I am locked out!"
@@ -51,7 +51,7 @@ def test_baseline_agent_escalation_security():
 
 def test_baseline_agent_caching(tmp_path):
     cache_dir = str(tmp_path / "cache")
-    client = LLMClient(cache_dir=cache_dir)
+    client = LLMClient(provider="mock", cache_dir=cache_dir)
     agent = BaselineSupportAgent(client=client)
     
     inp = CustomerTicketInput(ticket_id="TICK-C-1", customer_message="How to reset password?")

@@ -9,8 +9,8 @@ from typing import Dict, Any, Optional
 
 class LLMClient:
     """
-    Provider abstraction for LLM inference supporting Ollama (qwen3.5:2b, qwen3.5:9b, gemma4:12b),
-    mock offline mode, API key loading, and disk response caching.
+    Provider abstraction for LLM inference connecting directly to local Ollama LLMs
+    (qwen3.5:2b, qwen3.5:9b, gemma4:12b) or mock provider for unit testing.
     """
     def __init__(self, provider: str = "ollama", model_name: str = "qwen3.5:2b", temperature: float = 0.0, cache_dir: str = "results/baseline/cache", ollama_host: str = "http://localhost:11434"):
         self.provider = provider
@@ -58,10 +58,24 @@ class LLMClient:
 
     def _ollama_generate(self, system_prompt: str, user_message: str) -> Dict[str, Any]:
         url = f"{self.ollama_host}/api/generate"
+        
+        structured_prompt = (
+            f"{system_prompt}\n\n"
+            "Return valid JSON only matching the schema:\n"
+            "{\n"
+            '  "intent": "<short_intent>",\n'
+            '  "response": "<answer_text>",\n'
+            '  "should_escalate": <true|false>,\n'
+            '  "escalation_reason": "<reason_or_null>",\n'
+            '  "confidence": 0.95,\n'
+            '  "sources": []\n'
+            "}\n\n"
+            f"User Query:\n{user_message}"
+        )
+        
         payload = {
             "model": self.model_name,
-            "system": system_prompt,
-            "prompt": user_message,
+            "prompt": structured_prompt,
             "stream": False,
             "format": "json",
             "options": {
@@ -69,25 +83,32 @@ class LLMClient:
             }
         }
         
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"}
+        )
+        
         try:
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"}
-            )
-            with urllib.request.urlopen(req, timeout=30) as response:
+            with urllib.request.urlopen(req, timeout=45) as response:
                 res_data = json.loads(response.read().decode("utf-8"))
                 raw_text = res_data.get("response", "").strip()
                 
-                # Parse JSON response
                 parsed = self._extract_json(raw_text)
                 if parsed:
                     return parsed
                 else:
-                    return self._mock_generate(user_message)
+                    return {
+                        "intent": "general_support",
+                        "response": raw_text or "Thank you for reaching out to support.",
+                        "should_escalate": False,
+                        "escalation_reason": None,
+                        "confidence": 0.85,
+                        "sources": []
+                    }
         except Exception as e:
-            # Fallback to mock generator if Ollama is unreachable
-            return self._mock_generate(user_message)
+            # Re-raise or handle connection errors cleanly
+            raise RuntimeError(f"Ollama API call to model {self.model_name} failed: {e}")
 
     def _extract_json(self, text: str) -> Optional[Dict[str, Any]]:
         if not text:
@@ -97,7 +118,6 @@ class LLMClient:
         except Exception:
             pass
             
-        # Try finding JSON block inside markdown fence ```json ... ```
         match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
         if match:
             try:
@@ -105,7 +125,6 @@ class LLMClient:
             except Exception:
                 pass
                 
-        # Try finding first { ... } bracket pair
         match = re.search(r"(\{.*\})", text, re.DOTALL)
         if match:
             try:

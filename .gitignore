@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.venv/
+env/
+venv/
+ENV/
+
+# Data & Cache files
+data/raw/
+data/interim/
+data/processed/
+results/baseline/cache/
+*.csv
+*.jsonl
+
+# Ignore markdown files EXCEPT README.md
+*.md
+!README.md
+
+# Environment variables & secrets
+.env
+.env.local
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

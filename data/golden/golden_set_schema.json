@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GoldenSetRecord",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "original_ticket_id": {
+      "type": "string"
+    },
+    "question": {
+      "type": "string"
+    },
+    "reference_answer": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "intent": {
+      "type": "string"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "easy",
+        "medium",
+        "hard"
+      ]
+    },
+    "should_escalate": {
+      "type": "boolean"
+    },
+    "required_facts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_dataset": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "question",
+    "reference_answer",
+    "category",
+    "difficulty",
+    "should_escalate"
+  ]
+}

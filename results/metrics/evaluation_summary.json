@@ -1,0 +1,313 @@
+{
+  "golden_set_size": 200,
+  "baseline": {
+    "agent_name": "Baseline LLM",
+    "sample_size": 200,
+    "correct_count": 76,
+    "accuracy": 0.38,
+    "accuracy_ci_95": [
+      0.3156,
+      0.4489
+    ],
+    "average_f1_token_overlap": 0.1232,
+    "escalation_metrics": {
+      "tp": 5,
+      "fp": 0,
+      "fn": 124,
+      "tn": 71,
+      "precision": 1.0,
+      "recall": 0.0388,
+      "f1": 0.0746,
+      "accuracy": 0.38,
+      "accuracy_ci_95": [
+        0.3156,
+        0.4489
+      ]
+    },
+    "category_stratification": {
+      "Technical Support": {
+        "correct": 2,
+        "total": 18,
+        "accuracy": 0.1111,
+        "ci_95": [
+          0.031,
+          0.328
+        ]
+      },
+      "Billing and Payments": {
+        "correct": 6,
+        "total": 18,
+        "accuracy": 0.3333,
+        "ci_95": [
+          0.1628,
+          0.5625
+        ]
+      },
+      "Returns and Exchanges": {
+        "correct": 9,
+        "total": 18,
+        "accuracy": 0.5,
+        "ci_95": [
+          0.2903,
+          0.7097
+        ]
+      },
+      "IT Support": {
+        "correct": 4,
+        "total": 19,
+        "accuracy": 0.2105,
+        "ci_95": [
+          0.0851,
+          0.4333
+        ]
+      },
+      "Product Support": {
+        "correct": 6,
+        "total": 18,
+        "accuracy": 0.3333,
+        "ci_95": [
+          0.1628,
+          0.5625
+        ]
+      },
+      "Customer Service": {
+        "correct": 5,
+        "total": 19,
+        "accuracy": 0.2632,
+        "ci_95": [
+          0.1181,
+          0.4879
+        ]
+      },
+      "Sales and Pre-Sales": {
+        "correct": 11,
+        "total": 18,
+        "accuracy": 0.6111,
+        "ci_95": [
+          0.3862,
+          0.7969
+        ]
+      },
+      "Service Outages and Maintenance": {
+        "correct": 1,
+        "total": 18,
+        "accuracy": 0.0556,
+        "ci_95": [
+          0.0099,
+          0.2576
+        ]
+      },
+      "General Inquiry": {
+        "correct": 7,
+        "total": 18,
+        "accuracy": 0.3889,
+        "ci_95": [
+          0.2031,
+          0.6138
+        ]
+      },
+      "Human Resources": {
+        "correct": 7,
+        "total": 18,
+        "accuracy": 0.3889,
+        "ci_95": [
+          0.2031,
+          0.6138
+        ]
+      },
+      "SOCIAL_SUPPORT": {
+        "correct": 18,
+        "total": 18,
+        "accuracy": 1.0,
+        "ci_95": [
+          0.8241,
+          1.0
+        ]
+      }
+    },
+    "difficulty_stratification": {
+      "hard": {
+        "correct": 0,
+        "total": 60,
+        "accuracy": 0.0,
+        "ci_95": [
+          0.0,
+          0.0602
+        ]
+      },
+      "medium": {
+        "correct": 55,
+        "total": 110,
+        "accuracy": 0.5,
+        "ci_95": [
+          0.4082,
+          0.5918
+        ]
+      },
+      "easy": {
+        "correct": 21,
+        "total": 30,
+        "accuracy": 0.7,
+        "ci_95": [
+          0.5212,
+          0.8334
+        ]
+      }
+    }
+  },
+  "rag": {
+    "agent_name": "RAG Support Agent",
+    "sample_size": 200,
+    "correct_count": 86,
+    "accuracy": 0.43,
+    "accuracy_ci_95": [
+      0.3633,
+      0.4993
+    ],
+    "average_f1_token_overlap": 0.1131,
+    "escalation_metrics": {
+      "tp": 18,
+      "fp": 3,
+      "fn": 111,
+      "tn": 68,
+      "precision": 0.8571,
+      "recall": 0.1395,
+      "f1": 0.24,
+      "accuracy": 0.43,
+      "accuracy_ci_95": [
+        0.3633,
+        0.4993
+      ]
+    },
+    "category_stratification": {
+      "Technical Support": {
+        "correct": 5,
+        "total": 18,
+        "accuracy": 0.2778,
+        "ci_95": [
+          0.125,
+          0.5087
+        ]
+      },
+      "Billing and Payments": {
+        "correct": 5,
+        "total": 18,
+        "accuracy": 0.2778,
+        "ci_95": [
+          0.125,
+          0.5087
+        ]
+      },
+      "Returns and Exchanges": {
+        "correct": 11,
+        "total": 18,
+        "accuracy": 0.6111,
+        "ci_95": [
+          0.3862,
+          0.7969
+        ]
+      },
+      "IT Support": {
+        "correct": 5,
+        "total": 19,
+        "accuracy": 0.2632,
+        "ci_95": [
+          0.1181,
+          0.4879
+        ]
+      },
+      "Product Support": {
+        "correct": 7,
+        "total": 18,
+        "accuracy": 0.3889,
+        "ci_95": [
+          0.2031,
+          0.6138
+        ]
+      },
+      "Customer Service": {
+        "correct": 6,
+        "total": 19,
+        "accuracy": 0.3158,
+        "ci_95": [
+          0.1536,
+          0.5399
+        ]
+      },
+      "Sales and Pre-Sales": {
+        "correct": 11,
+        "total": 18,
+        "accuracy": 0.6111,
+        "ci_95": [
+          0.3862,
+          0.7969
+        ]
+      },
+      "Service Outages and Maintenance": {
+        "correct": 2,
+        "total": 18,
+        "accuracy": 0.1111,
+        "ci_95": [
+          0.031,
+          0.328
+        ]
+      },
+      "General Inquiry": {
+        "correct": 9,
+        "total": 18,
+        "accuracy": 0.5,
+        "ci_95": [
+          0.2903,
+          0.7097
+        ]
+      },
+      "Human Resources": {
+        "correct": 8,
+        "total": 18,
+        "accuracy": 0.4444,
+        "ci_95": [
+          0.2456,
+          0.6628
+        ]
+      },
+      "SOCIAL_SUPPORT": {
+        "correct": 17,
+        "total": 18,
+        "accuracy": 0.9444,
+        "ci_95": [
+          0.7424,
+          0.9901
+        ]
+      }
+    },
+    "difficulty_stratification": {
+      "hard": {
+        "correct": 5,
+        "total": 60,
+        "accuracy": 0.0833,
+        "ci_95": [
+          0.0361,
+          0.1807
+        ]
+      },
+      "medium": {
+        "correct": 59,
+        "total": 110,
+        "accuracy": 0.5364,
+        "ci_95": [
+          0.4435,
+          0.6267
+        ]
+      },
+      "easy": {
+        "correct": 22,
+        "total": 30,
+        "accuracy": 0.7333,
+        "ci_95": [
+          0.5555,
+          0.8582
+        ]
+      }
+    }
+  }
+}

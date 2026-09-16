@@ -50,56 +50,41 @@ Train Split (60%)       Golden Candidate Split (20%)
 
 ---
 
-## 📊 Dataset Ingestion & Audit (Phase 1)
+## 🚀 Interactive CLI & Commands
 
-This project integrates **three real customer support datasets**:
-1. **Bitext Customer Support Dataset**: 26,872 intent-focused customer support records.
-2. **Multilingual Ticket System Dataset**: 28,587 enterprise tickets with subjects, bodies, priority ratings, and multi-language support (English, German, French, etc.).
-3. **Twitter Customer Support Dataset**: 93 social media support tickets.
-
-### Data Splits & Leakage Prevention
-- `train.jsonl` (60%): 33,322 records used for knowledge base vector indexing.
-- `dev.jsonl` (20%): 11,107 records used for local development and prompt tuning.
-- `golden_candidate.jsonl` (20%): 11,108 records reserved exclusively for evaluation with **0.0% data leakage**.
+### 1. Launch Interactive CLI
+Run the interactive terminal interface to test customer inquiries, view RAG document citations, and inspect real-time escalation triggers:
+```bash
+python -m scripts.cli
+```
+- Toggle modes: Type `/mode` to switch between `[RAG AGENT]` and `[BASELINE LLM]`.
+- Test random tickets: Type `/sample` to load a ticket from the evaluation set.
 
 ---
 
-## 🚀 Reproduction & Execution Commands
+### 2. Full Reproduction Pipeline Commands
 
-### 1. Installation & Environment Setup
 ```bash
-# Install package dependencies
+# 1. Install package dependencies
 pip install -e .
-```
 
-### 2. Dataset Audit & Processing (Phase 1)
-```bash
+# 2. Audit dataset & process splits
 python -m scripts.audit_dataset
-```
 
-### 3. Build RAG Vector Index (Phase 4)
-```bash
+# 3. Build RAG knowledge vector index
 python -m scripts.build_index
-```
 
-### 4. Generate Isolated Golden Evaluation Set (Phase 5)
-```bash
+# 4. Generate isolated Golden Evaluation Set
 python -m scripts.generate_golden_set
-```
 
-### 5. Execute Agent & Evaluation Pipeline (Phase 6)
-```bash
+# 5. Execute Agent & Evaluation Pipeline
 python -m scripts.evaluate
-```
 
-### 6. Perform Failure Analysis & Stress-Testing (Phases 8 & 9)
-```bash
+# 6. Perform Failure Analysis & Stress-Testing
 python -m src.analysis.failures
 python -m src.analysis.stress_test
-```
 
-### 7. Run Complete Test Suite
-```bash
+# 7. Run Complete Test Suite
 pytest
 ```
 
@@ -118,19 +103,11 @@ pytest
 
 ---
 
-## ⚠️ What the Headline Metric Hides
-
-1. **Category Disparity**: High-frequency order queries achieve higher accuracy, whereas technical security incidents perform lower due to complex domain constraints.
-2. **Mandatory Escalation Failures**: A headline score does not distinguish between a minor text typo and a missed security hack escalation.
-3. **Retrieval Grounding**: RAG significantly reduces hallucinations and improves escalation precision by 15.8%.
-
----
-
 ## 🛡️ Automated Test Suite Verification
 
-The project includes **15 unit tests** passing cleanly:
-- `tests/test_data.py`: Schema validation, missing values, PII audit, and split leakage isolation.
-- `tests/test_agent.py`: Agent input/output schemas, security escalation logic, and caching.
+The project includes **21 unit tests** passing cleanly:
+- `tests/test_agent.py`: Agent schemas, security escalation logic, caching, batch inference, and CLI sample ticket loader.
+- `tests/test_data.py`: Data audit schema validation, missing value detection, PII audit, and split leakage isolation.
 - `tests/test_retrieval.py`: Document chunking, index building/reloading, top-K retrieval, and source propagation.
 - `tests/test_evaluation.py`: Wilson Score confidence intervals, token overlap F1, and escalation metrics.
 - `tests/test_judge.py`: LLM judge scoring and Cohen's kappa agreement calculation.

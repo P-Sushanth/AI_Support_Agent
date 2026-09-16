@@ -5,6 +5,7 @@ from src.agent.schemas import CustomerTicketInput, SupportAgentOutput
 from src.agent.client import LLMClient
 from src.agent.agent import BaselineSupportAgent
 from scripts.run_agent import run_batch_inference
+from scripts.cli import load_sample_tickets
 
 def test_customer_ticket_input_schema():
     inp = CustomerTicketInput(
@@ -66,3 +67,8 @@ def test_batch_inference(tmp_path):
     res = run_batch_inference(str(dev_split), str(out_file))
     assert len(res) == 2
     assert os.path.exists(out_file)
+
+def test_cli_load_sample_tickets():
+    samples = load_sample_tickets()
+    assert isinstance(samples, list)
+    assert len(samples) > 0

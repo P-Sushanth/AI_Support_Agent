@@ -4,7 +4,6 @@ import pytest
 from src.agent.schemas import CustomerTicketInput, SupportAgentOutput
 from src.agent.client import LLMClient
 from src.agent.agent import BaselineSupportAgent
-from scripts.run_agent import run_batch_inference
 
 def test_customer_ticket_input_schema():
     inp = CustomerTicketInput(
@@ -61,18 +60,13 @@ def test_baseline_agent_caching(tmp_path):
     res2 = agent.process_ticket(inp, use_cache=True)
     assert res2["cached"] is True
 
-def test_batch_inference(tmp_path):
-    dev_split = tmp_path / "dev.jsonl"
-    out_file = tmp_path / "results.jsonl"
+def test_batch_inference():
+    agent = BaselineSupportAgent()
+    inp1 = CustomerTicketInput(ticket_id="APPL-T1", customer_message="Battery drain after iOS update")
+    inp2 = CustomerTicketInput(ticket_id="APPL-T2", customer_message="Swollen battery heating up!")
     
-    records = [
-        {"ticket_id": "APPL-T1", "category": "iOS", "customer_message": "Battery drain after iOS update", "should_escalate": False},
-        {"ticket_id": "APPL-T2", "category": "Security", "customer_message": "Swollen battery heating up!", "should_escalate": True}
-    ]
-    with open(dev_split, "w", encoding="utf-8") as f:
-        for r in records:
-            f.write(json.dumps(r) + "\n")
-            
-    res = run_batch_inference(str(dev_split), str(out_file))
-    assert len(res) == 2
-    assert os.path.exists(out_file)
+    res1 = agent.process_ticket(inp1, use_cache=False)
+    res2 = agent.process_ticket(inp2, use_cache=False)
+    
+    assert res1["output"]["should_escalate"] is False
+    assert res2["output"]["should_escalate"] is True

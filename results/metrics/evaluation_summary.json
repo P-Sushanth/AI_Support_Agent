@@ -56,12 +56,12 @@
   "simple_baseline": {
     "agent_name": "Simple Baseline (Zero-Shot)",
     "total_evaluated": 200,
-    "intent_accuracy": 0.68,
+    "intent_accuracy": 0.97,
     "intent_accuracy_ci_95": [
-      0.6125,
-      0.7407
+      0.9361,
+      0.9862
     ],
-    "average_token_f1": 0.0725,
+    "average_token_f1": 0.0943,
     "escalation_metrics": {
       "tp": 0,
       "fp": 0,
@@ -78,21 +78,21 @@
     },
     "difficulty_breakdown": {
       "easy": {
-        "correct": 78,
+        "correct": 113,
         "total": 117,
-        "accuracy": 0.6667,
+        "accuracy": 0.9658,
         "ci_95": [
-          0.5772,
-          0.7456
+          0.9154,
+          0.9866
         ]
       },
       "medium": {
-        "correct": 53,
+        "correct": 73,
         "total": 75,
-        "accuracy": 0.7067,
+        "accuracy": 0.9733,
         "ci_95": [
-          0.5956,
-          0.7976
+          0.9079,
+          0.9927
         ]
       },
       "hard": {
@@ -114,7 +114,7 @@
       0.5359,
       0.6702
     ],
-    "average_token_f1": 0.0698,
+    "average_token_f1": 0.0703,
     "escalation_metrics": {
       "tp": 0,
       "fp": 4,

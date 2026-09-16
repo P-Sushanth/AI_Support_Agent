@@ -16,7 +16,7 @@
   },
   "experiment_3_baseline_comparison": {
     "trivial_baseline_accuracy_pct": 29.5,
-    "simple_baseline_accuracy_pct": 68.0,
+    "simple_baseline_accuracy_pct": 97.0,
     "rag_agent_accuracy_pct": 60.5
   },
   "experiment_4_high_severity_failure_concentration": {

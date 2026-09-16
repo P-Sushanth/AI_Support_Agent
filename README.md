@@ -29,17 +29,28 @@ python -m scripts.cli
 
 ---
 
-## 🎯 Motivation: What the Headline Number Hides
+## 🎯 1. The Core Idea (The "Why")
 
-Most portfolio projects report a headline metric like *"90% Accuracy Chatbot"* and stop there. 
+Imagine a company claims: **"Our AI Customer Support Chatbot is 90% accurate!"**
+
+That sounds great, but in the real world, **that headline number is often misleading**:
+
+- **Why?** What if 85% of customer questions are super easy (like *"What are your store hours?"*), and the chatbot answers those easily...
+- **BUT** on critical questions (like *"My account was hacked!"* or *"I was charged $4,000 wrongly"*), the chatbot gets **every single one wrong** or fails to get a human manager?
+
+The company boasts "90% accuracy", but in reality, the bot causes real customer harm and operational risk.
 
 This project takes the opposite approach: **it builds the agent, measures it, and then rigorously proves why its own headline score is misleading.**
 
-When evaluated on a dataset of **55,552 real tickets** across multiple languages and categories, our RAG agent achieved a **43.0% headline accuracy**. But that headline number hides three critical engineering flaws:
+---
 
-1. **Difficulty Masking**: The agent scored **~62.5% on easy queries**, but plummeted to **~28.1% on hard queries**. A high proportion of simple tickets artificially inflates the overall score.
-2. **High-Severity Failure Risk**: A 43% score doesn't show *which* tickets failed. The system can auto-resolve simple billing questions while missing **100% of mandatory security hijacking alerts** or corporate wire compliance rules.
-3. **Statistical Uncertainty**: On small evaluation samples, a 43% score carries a **95% Wilson Confidence Interval of `[36.33%, 49.93%]`** (~13.6% margin of uncertainty).
+## 🛠️ 2. What We Built (The System)
+
+We built an end-to-end AI Support System on **55,552 real customer support tickets**:
+
+1. **The AI Support Agent**: Connected to local models via **Ollama** (`qwen3.5:2b`, `qwen3.5:9b`, `gemma4:12b`).
+2. **RAG Knowledge Base**: The agent looks up verified company support documents before answering questions to prevent fake claims and hallucinations.
+3. **Escalation Engine**: The agent decides whether to answer automatically (`AUTO-RESOLVED`) OR send the ticket to a human manager (`ESCALATE TO HUMAN`) if it detects security hacks, refund overrides, or complex billing issues.
 
 ---
 
@@ -74,7 +85,7 @@ Customer Queries (55,552 Records)
                  ┌───────────────────────────────┐
                  │ Phase 8 & 9: Failure Taxonomy │
                  │ Classifier & Stress Testing   │
-                 └───────────────────────────────┘
+                 └───────────────┬───────────────┘
 ```
 
 ---

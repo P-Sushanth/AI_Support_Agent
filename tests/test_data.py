@@ -1,40 +1,28 @@
 import os
 import json
 import pytest
-from src.data.audit import load_and_standardize_raw_datasets, audit_dataset, partition_and_save
+from src.data.audit import load_and_standardize_raw_datasets, audit_and_redact_pii, run_dataset_audit
 
-def test_load_real_datasets():
+def test_load_apple_support_dataset():
     records = load_and_standardize_raw_datasets()
-    assert len(records) > 50000
+    assert len(records) > 0
     assert "ticket_id" in records[0]
     assert "customer_message" in records[0]
-    assert "source_dataset" in records[0]
+    assert records[0]["brand"] == "@AppleSupport"
 
-def test_audit_real_datasets_schema():
-    records = load_and_standardize_raw_datasets()
-    profile = audit_dataset(records)
-    
-    assert "total_records" in profile
-    assert profile["total_records"] == len(records)
-    assert "source_distribution" in profile
-    assert "category_distribution" in profile
-    assert "difficulty_distribution" in profile
-    assert "pii_counts" in profile
-    assert profile["total_records"] > 50000
+def test_audit_pii_redaction():
+    sample_records = [
+        {"customer_message": "Contact me at user@example.com or 555-0192"}
+    ]
+    clean_records, pii_counts = audit_and_redact_pii(sample_records)
+    assert pii_counts["email"] == 1
+    assert pii_counts["phone"] == 1
+    assert "[EMAIL_REDACTED]" in clean_records[0]["customer_message"]
 
-def test_partition_and_save_real_datasets():
-    records = load_and_standardize_raw_datasets()
-    data_config, train, dev, golden = partition_and_save(records)
-    
-    assert os.path.exists(data_config["splits"]["train"])
-    assert os.path.exists(data_config["splits"]["dev"])
-    assert os.path.exists(data_config["splits"]["golden_candidates"])
-    
-    assert len(train) > 0
-    assert len(dev) > 0
-    assert len(golden) > 0
-    
-    # Verify no overlap between train and golden candidate ticket IDs
-    train_ids = {r["ticket_id"] for r in train}
-    golden_ids = {r["ticket_id"] for r in golden}
-    assert len(train_ids.intersection(golden_ids)) == 0
+def test_dataset_audit_pipeline():
+    profile = run_dataset_audit()
+    assert profile["total_records"] > 0
+    assert profile["data_leakage_overlap"] == 0
+    assert os.path.exists("data/processed/train.jsonl")
+    assert os.path.exists("data/processed/dev.jsonl")
+    assert os.path.exists("data/processed/golden_candidate.jsonl")

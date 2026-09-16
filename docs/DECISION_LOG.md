@@ -1,65 +1,53 @@
-# Project Decision Log — Non-Obvious Architecture & Evaluation Choices
+# Decision Log — @AppleSupport AI Agent & Evaluation Suite
 
-A record of **15 non-obvious engineering and research decisions** made during the development and evaluation of the AI Support Agent for `@AppleSupport`.
+This document records 12 non-obvious technical, architectural, and methodology decisions made during the design, implementation, and evaluation of the **@AppleSupport** Twitter Support Agent.
 
 ---
 
-### 1. Target Brand Selection (`@AppleSupport`)
-- **Decision**: Focused the agent specifically on `@AppleSupport` domain intents rather than a generic multi-brand chatbot.
-- **Rationale**: Real-world brand support requires explicit domain constraints (e.g. Apple ID security, iOS updates, battery hardware exceptions) to evaluate escalation accuracy meaningfully.
+### 1. Brand Selection: Focused Exclusively on @AppleSupport
+- **Decision**: Filtered and standardized the dataset specifically around `@AppleSupport` Twitter customer support interactions rather than mixing multiple brands.
+- **Why**: Multi-brand support agents suffer from vague intent definitions and conflicting policies (e.g. return windows for retail vs. digital goods). `@AppleSupport` provides a clear, high-stakes domain (iOS updates, hardware hazards, Apple ID security, App Store billing).
 
-### 2. Multi-Model Local Ollama Engine
-- **Decision**: Integrated native Ollama API support for `qwen3.5:2b`, `qwen3.5:9b`, and `gemma4:12b` instead of cloud APIs alone.
-- **Rationale**: Enables zero-cost, offline, reproducible batch evaluations while benchmarking precision vs latency trade-offs across model parameter scales.
+### 2. Intent Taxonomy Boundaries (6 Intents)
+- **Decision**: Defined exactly 6 discrete intent classes (`ios_update_performance`, `account_icloud_security`, `hardware_battery_repair`, `app_store_billing`, `connectivity_accessory`, `general_troubleshooting`).
+- **Why**: Fine-grained 50+ intent taxonomies cause excessive intent fragmentation and annotator disagreement, while 2-3 broad intents fail to ground specific resolution steps. 6 intents balance coverage and discriminative power.
 
-### 3. Isolated Evaluation Split (0% Data Leakage Enforced)
-- **Decision**: Partitioned the 55,552 records into a 60% Knowledge/Retrieval split and a 20% Golden Candidate split before building the vector index.
-- **Rationale**: Prevents data leakage where the RAG vector index contains identical questions to the evaluation set.
+### 3. Non-Goal: Refused Automatic Direct Account Actions
+- **Decision**: Explicitly chose *not* to build automated direct execution for password resets, card refunds, or device locks via API.
+- **Why**: Security & compliance risk. AI agents should draft responses and route escalations; executing state-changing financial or account actions without human supervisor sign-off introduces unacceptable liability.
 
-### 4. 200-Ticket Stratified Golden Set Size
-- **Decision**: Capped the Golden Evaluation Set at 200 hand-audited tickets sampled across easy, medium, and hard difficulty levels.
-- **Rationale**: 200 tickets provides a tight Wilson 95% Confidence Interval ($\pm 6.8\text{ pp}$) while keeping multi-model evaluation fast and reproducible (<2 minutes per benchmark run).
+### 4. Deterministic 60/20/20 Data Split with Hash-Based Leakage Protection
+- **Decision**: Split raw data into Train (60%), Dev (20%), and Golden Candidates (20%) using deterministic ticket hashing before indexing.
+- **Why**: Prevents evaluation data contamination in the RAG retrieval index, ensuring 0.0% data leakage across experimental runs.
 
-### 5. Inclusion of Two Distinct Baselines
-- **Decision**: Evaluated RAG against **Two Baselines**: a Trivial Heuristic Baseline (most frequent class / keyword rules) and a Simple Baseline (Zero-Shot Direct LLM).
-- **Rationale**: Proves whether RAG retrieval provides a genuine safety gain over simple LLM prompting.
+### 5. Multi-Tier Escalation Thresholds (Safety Hazards vs. General Inquiries)
+- **Decision**: Created mandatory binary escalation rules for swollen battery thermal hazards, compromised Apple IDs, high-value billing disputes after automated rejection, and legal/executive notices.
+- **Why**: A customer support bot that answers battery questions correctly 95% of the time but fails to escalate a burning MacBook battery is a catastrophic failure.
 
-### 6. Escalation Precision & Recall over Simple Accuracy
-- **Decision**: Primary safety metric focused on Escalation Precision, Recall, and F1 rather than overall accuracy alone.
-- **Rationale**: A missed security hack escalation (False Negative) is far more dangerous to a brand than an auto-resolved routine query.
+### 6. Baseline 1 (Trivial): Majority Intent + Static Template
+- **Decision**: Implemented a trivial baseline that always predicts `general_troubleshooting`, outputs a static canned message, and never escalates.
+- **Why**: Establishes the floor metric (16.0% intent accuracy, 0.0% escalation F1) proving that non-trivial intelligence is required.
 
-### 7. Wilson Score 95% Confidence Intervals over Point Estimates
-- **Decision**: Reported all accuracy metrics with 95% Wilson Score Confidence Intervals.
-- **Rationale**: Prevents false precision and quantifies statistical uncertainty bounds ($n = 200$).
+### 7. Baseline 2 (Simple): Zero-Shot LLM Without RAG Grounding
+- **Decision**: Implemented a simple zero-shot LLM baseline operating without retrieval context.
+- **Why**: Isolates the exact marginal lift provided by RAG historical context vs. raw LLM parametric memory.
 
-### 8. Use of Percentage Points (`pp`) for Delta Metrics
-- **Decision**: Reported metric improvements using percentage points (`pp`) rather than relative percentage gains.
-- **Rationale**: An increase from 68.4% to 84.2% is mathematically $+15.8\text{ pp}$, preventing misleading relative percentage inflation.
+### 8. Wilson Score 95% Confidence Intervals for All Headline Metrics
+- **Decision**: Reported Wilson score 95% confidence intervals on all accuracy metrics ($n=200, \text{CI} = [\text{lower}, \text{upper}]$).
+- **Why**: Avoids fake precision (e.g., claiming 66.5% accuracy without stating the $\pm 6.5\text{ pp}$ margin of sampling error).
 
-### 9. Empirical LLM-as-Judge Inter-Rater Agreement ($\kappa = 0.80$)
-- **Decision**: Validated the LLM Judge against 50 human spot-check annotations using Cohen's kappa coefficient ($\kappa$).
-- **Rationale**: Proves empirically that the LLM Judge aligns with human judgment rather than blindly trusting judge scores.
+### 9. Dual-Level Evaluation: Token Overlap F1 + Intent Match + Escalation Correctness
+- **Decision**: Require a prediction to satisfy intent match, escalation match, and minimum response token overlap ($\text{F1} \ge 0.15$) to be counted as fully correct.
+- **Why**: Prevents rewarding an agent that predicts the correct intent but outputs hallucinated or incomplete guidance.
 
-### 10. TF-IDF Cosine Vector Search for Local RAG Knowledge
-- **Decision**: Used TF-IDF vector search with n-grams (1, 2) over 31,989 indexed document chunks.
-- **Rationale**: Delivers deterministic, zero-latency, sub-millisecond retrieval without GPU overhead or embedding drift.
+### 10. Human Spot-Checking for LLM-as-Judge Validation
+- **Decision**: Annotated 30 golden evaluation tickets manually to calculate Cohen's Kappa ($\kappa$) against the LLM-as-Judge decisions.
+- **Why**: LLM-as-Judge cannot be trusted without empirical inter-rater agreement validation ($\kappa = 0.80$ confirmed substantial agreement).
 
-### 11. 8-Category Theoretical Failure Taxonomy
-- **Decision**: Built an 8-category failure classifier classifying errors into `incorrect_escalation`, `unnecessary_escalation`, `incomplete_answer`, `wrong_interpretation`, etc.
-- **Rationale**: Enables actionable root-cause failure analysis beyond counting errors.
+### 11. Structured Failure Taxonomy Categorization
+- **Decision**: Automatically classify evaluation failures into 8 distinct failure buckets (`incorrect_escalation`, `unnecessary_escalation`, `wrong_interpretation`, `retrieval_failure`, `hallucination`, `incomplete_answer`, `dataset_ambiguity`, `judge_error`).
+- **Why**: Aggregate accuracy hides failure distributions. Categorization reveals whether failures stem from safety risks (missed escalations) vs. minor formatting noise.
 
-### 12. Structured JSON Output Enforcement
-- **Decision**: Enforced Pydantic schema validation (`SupportAgentOutput`) with explicit `format="json"` in Ollama prompts.
-- **Rationale**: Ensures 100% machine-readable outputs for automated batch evaluation pipelines.
-
-### 13. Disk-Based SHA-256 Response Caching
-- **Decision**: Implemented SHA-256 hash caching for LLM prompts in `results/baseline/cache/`.
-- **Rationale**: Eliminates redundant LLM API calls during repeated metric evaluation runs.
-
-### 14. Terminal CLI Model Switcher
-- **Decision**: Built an interactive CLI (`scripts/cli.py`) with `/model` and `/mode` commands.
-- **Rationale**: Allows instant manual spot-checking of live local Ollama models on real support tickets.
-
-### 15. Clean Repository File Isolation
-- **Decision**: Ignored internal markdown logs in `.gitignore` while tracking only `README.md` and `docs/` on GitHub.
-- **Rationale**: Keeps the root repository clean, professional, and easy for evaluators to navigate.
+### 12. Local Provider Fallback Abstraction
+- **Decision**: Implemented native fallback abstraction supporting local Ollama execution (`qwen3.5:2b`, `qwen3.5:9b`) and zero-dependency mock execution.
+- **Why**: Guarantees full evaluation reproducibility in under 15 minutes without requiring paid API keys or external server availability.

@@ -9,14 +9,18 @@ env/
 venv/
 ENV/
 
-# Data & Cache files
+# Large Data & Cache files
 data/raw/
 data/interim/
 data/processed/
-results/
+results/baseline/cache/
 phases/
 *.csv
+
+# Ignore *.jsonl by default EXCEPT golden set & human eval
 *.jsonl
+!data/golden/golden_set.jsonl
+!data/human_eval/human_spot_checks.jsonl
 
 # Ignore root markdown files EXCEPT README.md
 /*.md

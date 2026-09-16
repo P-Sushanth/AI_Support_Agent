@@ -1,51 +1,25 @@
 {
-  "total_records": 55552,
-  "source_distribution": {
-    "bitext_customer_support": 26872,
-    "multilang_tickets": 28587,
-    "twitter_support": 93
+  "target_brand": "@AppleSupport",
+  "total_records": 1011,
+  "train_records": 606,
+  "dev_records": 202,
+  "golden_candidates": 203,
+  "data_leakage_overlap": 0,
+  "pii_detected": {
+    "email": 0,
+    "phone": 328,
+    "ip_address": 0
   },
-  "category_distribution": {
-    "ORDER": 3988,
-    "SHIPPING": 1970,
-    "CANCEL": 950,
-    "INVOICE": 1999,
-    "PAYMENT": 1998,
-    "REFUND": 2992,
-    "FEEDBACK": 1997,
-    "CONTACT": 1999,
-    "ACCOUNT": 5986,
-    "DELIVERY": 1994,
-    "SUBSCRIPTION": 999,
-    "Technical Support": 8362,
-    "Returns and Exchanges": 1437,
-    "Billing and Payments": 2788,
-    "Sales and Pre-Sales": 918,
-    "Service Outages and Maintenance": 1148,
-    "Product Support": 5252,
-    "IT Support": 3433,
-    "Customer Service": 4268,
-    "Human Resources": 576,
-    "General Inquiry": 405,
-    "SOCIAL_SUPPORT": 93
-  },
-  "difficulty_distribution": {
-    "easy": 28778,
-    "hard": 11178,
-    "medium": 15596
-  },
-  "language_distribution": {
-    "en": 43303,
-    "de": 12249
+  "intent_distribution": {
+    "ios_update_performance": 604,
+    "general_troubleshooting": 284,
+    "connectivity_accessory": 42,
+    "hardware_battery_repair": 38,
+    "account_icloud_security": 24,
+    "app_store_billing": 19
   },
   "escalation_distribution": {
-    "true": 20015,
-    "false": 35537
-  },
-  "duplicate_count": 2237,
-  "pii_counts": {
-    "email": 0,
-    "phone": 1241,
-    "ip_address": 2
+    "false": 955,
+    "true": 56
   }
 }

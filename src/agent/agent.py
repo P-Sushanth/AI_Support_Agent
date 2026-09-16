@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class BaselineSupportAgent:
     def __init__(self, client: Optional[LLMClient] = None, prompt_version: str = "system_v1"):
-        self.client = client or LLMClient()
+        self.client = client or LLMClient(provider="mock", model_name="simple-baseline-v1")
         self.prompt_manager = PromptManager()
         self.prompt_version = prompt_version
         self.system_prompt = self.prompt_manager.load_prompt(prompt_version)
@@ -23,10 +23,9 @@ class BaselineSupportAgent:
             llm_result = self.client.generate(self.system_prompt, user_msg, use_cache=use_cache)
             raw_response = llm_result["response"]
             
-            # Validate output against SupportAgentOutput Pydantic schema
             structured_output = SupportAgentOutput(
-                intent=raw_response.get("intent", "general_support"),
-                response=raw_response.get("response", "Thank you for reaching out."),
+                intent=raw_response.get("intent", "general_troubleshooting"),
+                response=raw_response.get("response", "Thank you for reaching out to @AppleSupport."),
                 should_escalate=raw_response.get("should_escalate", False),
                 escalation_reason=raw_response.get("escalation_reason"),
                 confidence=raw_response.get("confidence", 1.0),
@@ -44,7 +43,7 @@ class BaselineSupportAgent:
         except Exception as e:
             logger.error(f"Error processing ticket {ticket_input.ticket_id}: {e}")
             fallback_output = SupportAgentOutput(
-                intent="error_fallback",
+                intent="general_troubleshooting",
                 response="We encountered an issue processing your request. Escalating to support.",
                 should_escalate=True,
                 escalation_reason=f"Processing exception: {str(e)}",

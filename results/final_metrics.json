@@ -1,43 +1,27 @@
 {
   "experiment_1_headline_metric": {
-    "headline_accuracy_pct": 43.0,
+    "headline_intent_accuracy_pct": 60.5,
     "sample_size": 200,
     "confidence_interval_95_pct": [
-      36.33,
-      49.93
+      53.59,
+      67.02
     ],
-    "interpretation": "The headline accuracy of 43.0% carries a 95% confidence interval of [36.33%, 49.93%], demonstrating ~13.6% margin of uncertainty."
+    "interpretation": "The headline intent accuracy of 60.5% carries a 95% Wilson confidence interval of [53.59%, 67.02%], demonstrating ~13.4% statistical uncertainty."
   },
   "experiment_2_difficulty_stratification": {
-    "easy_accuracy_pct": 73.33,
-    "hard_accuracy_pct": 8.33,
-    "difficulty_gap_pct": 65.0,
-    "interpretation": "Performance drops by 65.0% when moving from easy queries (73.33%) to hard queries (8.33%)."
+    "easy_accuracy_pct": 57.26,
+    "hard_accuracy_pct": 0.0,
+    "difficulty_gap_pct": 57.26,
+    "interpretation": "Performance drops significantly on hard tickets (security breaches, swollen batteries, legal notices)."
   },
-  "experiment_3_category_stratification": {
-    "categories_evaluated": 11,
-    "lowest_performing_category": {
-      "category": "Service Outages and Maintenance",
-      "total_tickets": 18,
-      "correct_tickets": 2,
-      "accuracy_pct": 11.11
-    },
-    "highest_performing_category": {
-      "category": "SOCIAL_SUPPORT",
-      "total_tickets": 18,
-      "correct_tickets": 17,
-      "accuracy_pct": 94.44
-    }
+  "experiment_3_baseline_comparison": {
+    "trivial_baseline_accuracy_pct": 29.5,
+    "simple_baseline_accuracy_pct": 68.0,
+    "rag_agent_accuracy_pct": 60.5
   },
-  "experiment_6_baseline_vs_rag": {
-    "baseline_accuracy_pct": 38.0,
-    "rag_accuracy_pct": 43.0,
-    "accuracy_gain_pct": 5.0,
-    "interpretation": "RAG grounding improves support accuracy by providing verified context."
-  },
-  "experiment_7_high_severity_failure_concentration": {
-    "missed_security_policy_escalations": 111,
-    "unnecessary_escalations": 3,
-    "interpretation": "While overall score is 43.0%, the agent missed 111 mandatory human escalations."
+  "experiment_4_high_severity_failure_concentration": {
+    "missed_security_policy_escalations": 8,
+    "unnecessary_escalations": 4,
+    "interpretation": "The agent missed 8 mandatory human escalations, demonstrating how aggregate accuracy hides critical safety risks."
   }
 }

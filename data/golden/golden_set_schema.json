@@ -1,25 +1,32 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "GoldenSetRecord",
+  "title": "AppleSupportGoldenSetSchema",
   "type": "object",
+  "required": [
+    "ticket_id",
+    "brand",
+    "customer_message",
+    "ground_truth_intent",
+    "ground_truth_response",
+    "should_escalate"
+  ],
   "properties": {
-    "id": {
+    "ticket_id": {
       "type": "string"
     },
-    "original_ticket_id": {
-      "type": "string"
-    },
-    "question": {
-      "type": "string"
-    },
-    "reference_answer": {
-      "type": "string"
-    },
-    "category": {
+    "brand": {
       "type": "string"
     },
     "intent": {
-      "type": "string"
+      "type": "string",
+      "enum": [
+        "ios_update_performance",
+        "account_icloud_security",
+        "hardware_battery_repair",
+        "app_store_billing",
+        "connectivity_accessory",
+        "general_troubleshooting"
+      ]
     },
     "difficulty": {
       "type": "string",
@@ -29,25 +36,20 @@
         "hard"
       ]
     },
+    "customer_message": {
+      "type": "string"
+    },
+    "ground_truth_response": {
+      "type": "string"
+    },
     "should_escalate": {
       "type": "boolean"
     },
-    "required_facts": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "source_dataset": {
-      "type": "string"
+    "escalation_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
     }
-  },
-  "required": [
-    "id",
-    "question",
-    "reference_answer",
-    "category",
-    "difficulty",
-    "should_escalate"
-  ]
+  }
 }

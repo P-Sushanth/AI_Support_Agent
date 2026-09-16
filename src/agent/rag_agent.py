@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class RAGSupportAgent:
     def __init__(self, client: Optional[LLMClient] = None, retriever: Optional[KnowledgeRetriever] = None, top_k: int = 3):
-        self.client = client or LLMClient(model_name="rag-support-agent-v1")
+        self.client = client or LLMClient(provider="mock", model_name="rag-support-agent-v1")
         self.prompt_manager = PromptManager()
         self.system_prompt = self.prompt_manager.load_prompt("system_v1")
         self.top_k = top_k
@@ -21,7 +21,6 @@ class RAGSupportAgent:
             self.retriever = retriever
 
     def process_ticket(self, ticket_input: CustomerTicketInput, use_cache: bool = True) -> Dict[str, Any]:
-        # 1. Perform Top-K Retrieval from indexed knowledge base
         retrieved_docs = self.retriever.retrieve(
             query=ticket_input.customer_message,
             top_k=self.top_k
@@ -30,7 +29,6 @@ class RAGSupportAgent:
         context_texts = [d["text"] for d in retrieved_docs]
         retrieved_source_ids = [d["doc_id"] for d in retrieved_docs]
         
-        # 2. Format RAG prompt incorporating knowledge context
         formatted_user_msg = self.prompt_manager.format_user_message(
             customer_message=ticket_input.customer_message,
             category=ticket_input.category or "",
@@ -42,8 +40,8 @@ class RAGSupportAgent:
             raw = llm_result["response"]
             
             structured_output = SupportAgentOutput(
-                intent=raw.get("intent", "general_support"),
-                response=raw.get("response", "Thank you for reaching out."),
+                intent=raw.get("intent", "general_troubleshooting"),
+                response=raw.get("response", "Thank you for reaching out to @AppleSupport."),
                 should_escalate=raw.get("should_escalate", False),
                 escalation_reason=raw.get("escalation_reason"),
                 confidence=raw.get("confidence", 0.95),
@@ -61,7 +59,7 @@ class RAGSupportAgent:
         except Exception as e:
             logger.error(f"Error processing RAG ticket {ticket_input.ticket_id}: {e}")
             fallback_output = SupportAgentOutput(
-                intent="error_fallback",
+                intent="general_troubleshooting",
                 response="Error processing inquiry. Escalating to supervisor.",
                 should_escalate=True,
                 escalation_reason=str(e),

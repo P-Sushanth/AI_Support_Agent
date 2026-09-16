@@ -13,7 +13,8 @@ ENV/
 data/raw/
 data/interim/
 data/processed/
-results/baseline/cache/
+results/
+phases/
 *.csv
 *.jsonl
 

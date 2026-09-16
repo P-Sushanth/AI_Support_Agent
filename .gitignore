@@ -22,10 +22,10 @@ phases/
 !data/golden/golden_set.jsonl
 !data/human_eval/human_spot_checks.jsonl
 
-# Ignore root markdown files EXCEPT README.md and PROJECT_LOG.md
+# Ignore root markdown files EXCEPT README.md
 /*.md
 !README.md
-!PROJECT_LOG.md
+PROJECT_LOG.md
 
 # Allow docs directory and markdown files inside docs/
 !docs/

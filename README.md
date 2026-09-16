@@ -252,3 +252,20 @@ $$\kappa = \frac{P_o - P_e}{1 - P_e}$$
 
 ## 📜 13. Decision Log Summary
 See [`docs/DECISION_LOG.md`](file:///c:/Users/popur/Documents/Projects/AI_Support_Agent/docs/DECISION_LOG.md) for 12 non-obvious engineering and methodology decisions.
+
+---
+
+## 📚 14. Citations & External Libraries
+
+In accordance with assignment rules, all external datasets, statistical algorithms, and open-source packages utilized in this project are explicitly cited:
+
+1. **Primary Dataset**: Kaggle *Customer Support on Twitter* (`thoughtvector/customer-support-on-twitter` / `TNE-AI/customer-support-on-twitter-conversation`).
+2. **Statistical Foundations**:
+   - Wilson, E. B. (1927). *Probable Inference, the Law of Errors, and Statistical Inference*. Journal of the American Statistical Association (Binomial Wilson score confidence intervals).
+   - Cohen, J. (1960). *A Coefficient of Agreement for Nominal Scales*. Educational and Psychological Measurement (Inter-rater agreement $\kappa$).
+3. **Open-Source Libraries**:
+   - `scikit-learn`: TF-IDF vectorization (`TfidfVectorizer`) and cosine similarity matrix operations.
+   - `pydantic`: Schema type validation and structured output parsing.
+   - `pandas` & `numpy`: Data manipulation, split partitioning, and metric calculation.
+   - `datasets` (Hugging Face): Data ingestion.
+   - `pytest`: Automated unit test suite execution.

@@ -17,9 +17,13 @@ results/baseline/cache/
 *.csv
 *.jsonl
 
-# Ignore markdown files EXCEPT README.md
-*.md
+# Ignore root markdown files EXCEPT README.md
+/*.md
 !README.md
+
+# Allow docs directory and markdown files inside docs/
+!docs/
+!docs/*.md
 
 # Environment variables & secrets
 .env

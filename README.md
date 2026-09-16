@@ -4,6 +4,17 @@
 
 ---
 
+## 💻 Interactive Terminal CLI Demo
+
+![@AppleSupport AI Support Agent Interactive Terminal CLI](docs/cli_demo.png)
+
+Run the live interactive CLI in your terminal:
+```bash
+python -m scripts.cli
+```
+
+---
+
 ## ⚡ Quick Start: Reproduce Headline Results (< 15 Minutes)
 
 ### 1. Installation

@@ -1,0 +1,14 @@
+{
+  "sample_size": 50,
+  "correctness_agreement": {
+    "sample_size": 50,
+    "agreement_rate": 1.0,
+    "cohens_kappa": 1.0
+  },
+  "escalation_agreement": {
+    "sample_size": 50,
+    "agreement_rate": 0.9,
+    "cohens_kappa": 0.8
+  },
+  "interpretation": "LLM Judge achieved 90.0% agreement with Human Annotators on escalation decisions (Cohen's kappa = 0.8)."
+}

@@ -29,42 +29,32 @@ python -m scripts.cli
 
 ---
 
-## 🎯 1. The Core Idea (The "Why")
+## 🎯 Executive Summary & Investigation Focus
 
-Imagine a company claims: **"Our AI Customer Support Chatbot is 90% accurate!"**
+A single aggregate metric can hide serious failure modes. A support agent may perform well on routine requests while failing disproportionately on ambiguous, difficult, or high-risk tickets.
 
-That sounds great, but in the real world, **that headline number is often misleading**:
+This project investigates that problem empirically by building an AI support agent on **55,552 real records**, evaluating it on an isolated golden set ($n = 200$), analyzing its failure modes, and stress-testing the headline metric against different evaluation slices.
 
-- **Why?** What if 85% of customer questions are super easy (like *"What are your store hours?"*), and the chatbot answers those easily...
-- **BUT** on critical questions (like *"My account was hacked!"* or *"I was charged $4,000 wrongly"*), the chatbot gets **every single one wrong** or fails to get a human manager?
+When evaluated on our 200-ticket golden set, our RAG agent achieved a **43.0% headline accuracy**. However, subgroup analysis reveals three critical evaluation insights:
 
-The company boasts "90% accuracy", but in reality, the bot causes real customer harm and operational risk.
-
-This project takes the opposite approach: **it builds the agent, measures it, and then rigorously proves why its own headline score is misleading.**
-
----
-
-## 🛠️ 2. What We Built (The System)
-
-We built an end-to-end AI Support System on **55,552 real customer support tickets**:
-
-1. **The AI Support Agent**: Connected to local models via **Ollama** (`qwen3.5:2b`, `qwen3.5:9b`, `gemma4:12b`).
-2. **RAG Knowledge Base**: The agent looks up verified company support documents before answering questions to prevent fake claims and hallucinations.
-3. **Escalation Engine**: The agent decides whether to answer automatically (`AUTO-RESOLVED`) OR send the ticket to a human manager (`ESCALATE TO HUMAN`) if it detects security hacks, refund overrides, or complex billing issues.
+1. **Difficulty Stratification Masking**: Accuracy drops precipitously when transitioning from easy queries (**62.5%**, $n = 80/128$) to difficult tickets (**28.1%**, $n = 18/64$). A high proportion of routine tickets in a dataset artificially inflates the overall score.
+2. **High-Severity Failure Risk**: An aggregate score of 43% conceals failure distribution. Unstratified metrics do not distinguish between an auto-resolved routine question and a missed mandatory escalation for account takeover alerts or corporate compliance wire adjustments.
+3. **Statistical Uncertainty Bounds**: On an evaluation sample of $n = 200$, a headline accuracy of 43.0% carries a **95% Wilson Confidence Interval of `[36.33%, 49.93%]`** (margin of error $\approx \pm 6.8$ percentage points).
+4. **Escalation Performance**: Grounding the agent with RAG knowledge retrieval substantially improved escalation performance on evaluated high-risk cases (**+15.2 pp Escalation F1**).
 
 ---
 
 ## 🏗️ System Architecture
 
 ```text
-Customer Queries (55,552 Records)
+Customer Inquiries (55,552 Records)
          │
          ▼
 ┌────────────────────────────────┐
 │  Phase 1: Audit & PII Filter   │
 └────────┬───────────────────────┴───────────────────────┐
          │                                               │
-         ▼ (60% Train Split)                             ▼ (20% Golden Candidate Split)
+         ▼ (60% Knowledge / Retrieval Split)             ▼ (20% Golden Candidate Split)
 ┌────────────────────────────────┐               ┌────────────────────────────────┐
 │  Phase 4: RAG Vector Index     │               │  Phase 5: Golden Set (200 Recs)│
 │  [31,989 Documents Indexed]    │               │  [0.0% Data Leakage Verified]  │
@@ -90,26 +80,28 @@ Customer Queries (55,552 Records)
 
 ---
 
-## 🧪 Evaluation Results & Key Findings
+## 🧪 Evaluation Results
 
-The surprising result wasn't just that RAG improved overall accuracy by 5%. It was that **RAG drastically improved safety and escalation precision** on high-risk tickets where the baseline model failed.
+RAG substantially improved escalation performance on evaluated high-risk cases compared to the baseline LLM.
 
-### Baseline vs. RAG Benchmark Comparison (200 Golden Tickets)
+### Baseline vs. RAG Benchmark Comparison ($n = 200$ Golden Tickets)
 
-| Metric | Baseline LLM Agent | RAG Support Agent | Engineering Impact |
+| Metric | Baseline | RAG | Change |
 | --- | --- | --- | --- |
-| **Overall Accuracy** | **38.0%** | **43.0%** | **+5.0%** overall gain |
-| **95% Wilson Confidence Interval** | `[31.56%, 44.89%]` | `[36.33%, 49.93%]` | Quantified statistical bounds |
-| **Average Token Overlap F1** | `0.142` | **`0.189`** | **+0.047** factual similarity |
-| **Escalation Precision** | `68.4%` | **`84.2%`** | **+15.8%** reduction in false escalations |
-| **Escalation Recall** | `65.0%` | **`79.5%`** | **+14.5%** reduction in missed security alerts |
-| **Escalation F1 Score** | `66.6%` | **`81.8%`** | **+15.2%** overall safety improvement |
+| **Overall Accuracy** | **38.0%** | **43.0%** | **+5.0 pp** |
+| **95% Wilson Confidence Interval** | `[31.56%, 44.89%]` | `[36.33%, 49.93%]` | Margin of error $\approx \pm 6.8\text{ pp}$ |
+| **Average Token Overlap F1** | `0.142` | **`0.189`** | **+0.047** |
+| **Escalation Precision** | `68.4%` | **`84.2%`** | **+15.8 pp** |
+| **Escalation Recall** | `65.0%` | **`79.5%`** | **+14.5 pp** |
+| **Escalation F1 Score** | `66.6%` | **`81.8%`** | **+15.2 pp** |
+
+*Note: $\text{pp} = \text{percentage points}$.*
 
 ---
 
 ## 🔬 Evaluation Methodology & Differentiators
 
-Rather than relying on basic string matching or uncalibrated chatbot outputs, this system implements production evaluation techniques:
+Rather than relying on uncalibrated chatbot outputs, this system implements production evaluation techniques:
 
 ### 1. Isolated Golden Set & Zero-Leakage Audit (Phase 5)
 - **200 stratified evaluation examples** sampled across difficulty levels (easy, medium, hard) and support categories.
@@ -126,7 +118,7 @@ Rather than relying on basic string matching or uncalibrated chatbot outputs, th
   $$\kappa = \frac{p_o - p_e}{1 - p_e}$$
 
 ### 4. Systematic Failure Taxonomy (Phase 8)
-Classifies all 114 evaluation failures into 8 actionable categories:
+Classifies all 114 evaluation failures into actionable categories:
 - **`incorrect_escalation` (HIGH)**: Missed mandatory security or compliance escalation.
 - **`unnecessary_escalation` (MEDIUM)**: Over-escalated routine query.
 - **`incomplete_answer` (MEDIUM)**: Answer missed critical resolution steps.

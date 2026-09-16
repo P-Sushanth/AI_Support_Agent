@@ -15,6 +15,8 @@ CONFIG_PATH = "configs/data.yaml"
 PROFILE_PATH = "results/dataset_profile.json"
 REPORT_PATH = "docs/dataset_report.md"
 
+TARGET_BRAND = "@AppleSupport"
+
 PII_PATTERNS = {
     "email": r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
     "phone": r"\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}",
@@ -22,14 +24,14 @@ PII_PATTERNS = {
 }
 
 ESCALATION_INTENTS = {
-    "security", "security_incident", "data_breach", "account_hack",
-    "refund_override", "fraud", "cancel_account", "legal_threat"
+    "security", "security_incident", "account_appleid_security", "data_breach", "account_hack",
+    "refund_override", "device_hardware_repair", "legal_threat"
 }
 
 def load_and_standardize_raw_datasets():
     canonical_records = []
     
-    # 1. Bitext Dataset
+    # 1. Bitext Dataset (Mapped to @AppleSupport Domain Intents)
     if os.path.exists(BITEXT_PATH):
         df_bitext = pd.read_csv(BITEXT_PATH).fillna("")
         for idx, row in df_bitext.iterrows():
@@ -41,14 +43,25 @@ def load_and_standardize_raw_datasets():
             if not msg:
                 continue
                 
+            # Map raw intent to @AppleSupport brand intent taxonomy
+            if "cancel" in intent or "order" in category:
+                brand_intent = "order_shipping_delivery"
+            elif "refund" in intent or "invoice" in intent:
+                brand_intent = "billing_subscription_refund"
+            elif "password" in intent or "account" in category:
+                brand_intent = "account_appleid_security"
+            else:
+                brand_intent = "software_ios_update"
+                
             should_escalate = any(k in intent for k in ESCALATION_INTENTS)
             difficulty = "hard" if should_escalate else ("medium" if len(msg) > 100 else "easy")
             
             canonical_records.append({
-                "ticket_id": f"BITEXT-{idx+1:05d}",
+                "ticket_id": f"APPLE-BIT-{idx+1:05d}",
+                "brand": TARGET_BRAND,
                 "source_dataset": "bitext_customer_support",
-                "category": category or "GENERAL",
-                "intent": intent or "general_query",
+                "category": category or "APPLE_SUPPORT",
+                "intent": brand_intent,
                 "language": "en",
                 "priority": "high" if should_escalate else "normal",
                 "customer_message": msg,
@@ -83,10 +96,11 @@ def load_and_standardize_raw_datasets():
             difficulty = "hard" if priority in ["high", "urgent"] else ("medium" if len(msg) > 150 else "easy")
             
             canonical_records.append({
-                "ticket_id": f"MULTI-{idx+1:05d}",
+                "ticket_id": f"APPLE-MULTI-{idx+1:05d}",
+                "brand": TARGET_BRAND,
                 "source_dataset": "multilang_tickets",
-                "category": queue or "TECHNICAL",
-                "intent": tag1 or t_type.lower() or "support_issue",
+                "category": queue or "APPLE_TECHNICAL",
+                "intent": tag1 or "software_ios_update",
                 "language": lang,
                 "priority": priority or "normal",
                 "customer_message": msg,
@@ -96,7 +110,7 @@ def load_and_standardize_raw_datasets():
                 "required_facts": [resp[:100]] if resp else []
             })
             
-    # 3. Twitter Support Sample
+    # 3. Twitter Support Dataset (@AppleSupport Handles)
     if os.path.exists(TWITTER_PATH):
         df_tw = pd.read_csv(TWITTER_PATH).fillna("")
         for idx, row in df_tw.iterrows():
@@ -104,17 +118,18 @@ def load_and_standardize_raw_datasets():
             if not msg:
                 continue
             canonical_records.append({
-                "ticket_id": f"TWITTER-{idx+1:04d}",
+                "ticket_id": f"APPLE-TW-{idx+1:04d}",
+                "brand": TARGET_BRAND,
                 "source_dataset": "twitter_support",
-                "category": "SOCIAL_SUPPORT",
-                "intent": "twitter_query",
+                "category": "APPLE_SOCIAL",
+                "intent": "general_support_inquiry",
                 "language": "en",
                 "priority": "normal",
                 "customer_message": msg,
-                "agent_response": "Thank you for reaching out. Please DM us your account details to assist.",
+                "agent_response": "We are here to help. Please DM us your device model and iOS version so we can assist.",
                 "should_escalate": False,
                 "difficulty": "easy",
-                "required_facts": ["DM account details for support"]
+                "required_facts": ["DM device details to @AppleSupport"]
             })
             
     return canonical_records
@@ -160,6 +175,7 @@ def audit_dataset(records):
                 pii_counts[pii_key] += 1
                 
     return {
+        "target_brand": TARGET_BRAND,
         "total_records": total_rows,
         "source_distribution": source_counts,
         "category_distribution": category_counts,
@@ -176,7 +192,6 @@ def partition_and_save(records):
     os.makedirs("results", exist_ok=True)
     os.makedirs("docs", exist_ok=True)
     
-    # Clean exact duplicates
     clean_records = []
     seen = set()
     for rec in records:
@@ -186,7 +201,6 @@ def partition_and_save(records):
         seen.add(msg)
         clean_records.append(rec)
         
-    # Sort deterministically
     clean_records.sort(key=lambda x: x["ticket_id"])
     
     n = len(clean_records)
@@ -210,6 +224,7 @@ def partition_and_save(records):
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
     data_config = {
+        "target_brand": TARGET_BRAND,
         "raw_datasets": {
             "bitext": BITEXT_PATH,
             "multilang": MULTILANG_PATH,
@@ -232,80 +247,11 @@ def partition_and_save(records):
         
     return data_config, train_records, dev_records, golden_candidates
 
-def generate_report(profile, data_config):
-    report_content = f"""# Comprehensive Real Dataset Audit Report
-
-## Executive Summary
-This project incorporates three real-world customer support datasets totaling **{profile['total_records']:,}** records across **{len(profile['category_distribution'])}** support categories.
-
-- **Clean Processed Records**: {data_config['counts']['total_clean']:,}
-- **Duplicates Excluded**: {profile['duplicate_count']:,}
-- **Train Split (60%)**: {data_config['counts']['train']:,} records
-- **Dev Split (20%)**: {data_config['counts']['dev']:,} records
-- **Golden Candidate Split (20%)**: {data_config['counts']['golden_candidates']:,} records
-
----
-
-## 1. Source Breakdown
-| Dataset Source | Records | Description |
-| --- | --- | --- |
-| `bitext_customer_support` | {profile['source_distribution'].get('bitext_customer_support', 0):,} | 27K intent-focused customer queries & responses |
-| `multilang_tickets` | {profile['source_distribution'].get('multilang_tickets', 0):,} | Enterprise ticket logs with priority, queues & languages |
-| `twitter_support` | {profile['source_distribution'].get('twitter_support', 0):,} | Social media customer support interactions |
-
----
-
-## 2. Difficulty & Language Stratification
-
-### Difficulty Distribution
-| Difficulty | Count | Percentage |
-| --- | --- | --- |
-| `easy` | {profile['difficulty_distribution'].get('easy', 0):,} | {profile['difficulty_distribution'].get('easy', 0)/profile['total_records']*100:.1f}% |
-| `medium` | {profile['difficulty_distribution'].get('medium', 0):,} | {profile['difficulty_distribution'].get('medium', 0)/profile['total_records']*100:.1f}% |
-| `hard` | {profile['difficulty_distribution'].get('hard', 0):,} | {profile['difficulty_distribution'].get('hard', 0)/profile['total_records']*100:.1f}% |
-
-### Primary Languages
-| Language | Ticket Count |
-| --- | --- |
-"""
-    for lang, cnt in sorted(profile['language_distribution'].items(), key=lambda x: x[1], reverse=True)[:10]:
-        report_content += f"| `{lang}` | {cnt:,} |\n"
-
-    report_content += f"""
----
-
-## 3. Escalation Requirements (`should_escalate`)
-| Escalation Required | Record Count | Percentage |
-| --- | --- | --- |
-| `True` (Requires Human Support / Security Escalation) | {profile['escalation_distribution'].get(True, 0):,} | {profile['escalation_distribution'].get(True, 0)/profile['total_records']*100:.1f}% |
-| `False` (Automated Resolution Eligible) | {profile['escalation_distribution'].get(False, 0):,} | {profile['escalation_distribution'].get(False, 0)/profile['total_records']*100:.1f}% |
-
----
-
-## 4. PII Audit Findings
-Matches detected across customer message content:
-- Email patterns: {profile['pii_counts']['email']:,}
-- Phone patterns: {profile['pii_counts']['phone']:,}
-- IP address patterns: {profile['pii_counts']['ip_address']:,}
-
----
-
-## 5. Leakage Prevention Strategy
-All evaluation subsets (`golden_candidate.jsonl`) are strictly partitioned deterministically based on ticket IDs and stored in `data/processed/golden_candidate.jsonl`. No records in `golden_candidate.jsonl` will be indexed into the RAG vector store.
-"""
-
-    with open(REPORT_PATH, "w", encoding="utf-8") as f:
-        f.write(report_content)
-        
-    with open(PROFILE_PATH, "w", encoding="utf-8") as f:
-        json.dump(profile, f, indent=2)
-
 def run_full_audit():
     records = load_and_standardize_raw_datasets()
     profile = audit_dataset(records)
     data_config, train, dev, golden = partition_and_save(records)
-    generate_report(profile, data_config)
-    print(f"Phase 1 Audit completed! Processed {len(records)} real support tickets.")
+    print(f"Phase 1 Audit completed for {TARGET_BRAND}! Processed {len(records)} support tickets.")
     return profile, data_config
 
 if __name__ == "__main__":

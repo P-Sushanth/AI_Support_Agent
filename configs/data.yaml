@@ -11,3 +11,4 @@ splits:
   dev: data/processed/dev.jsonl
   golden_candidates: data/processed/golden_candidate.jsonl
   train: data/processed/train.jsonl
+target_brand: '@AppleSupport'

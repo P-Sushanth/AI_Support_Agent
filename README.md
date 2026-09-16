@@ -37,7 +37,7 @@ This project investigates that problem empirically by building an AI support age
 
 When evaluated on our 200-ticket golden set, our RAG agent achieved a **43.0% headline accuracy**. However, subgroup analysis reveals three critical evaluation insights:
 
-1. **Difficulty Stratification Masking**: Accuracy drops precipitously when transitioning from easy queries (**62.5%**, $n = 80/128$) to difficult tickets (**28.1%**, $n = 18/64$). A high proportion of routine tickets in a dataset artificially inflates the overall score.
+1. **Difficulty Stratification Masking**: Accuracy drops precipitously when transitioning from easy queries (**62.5%**, $n = 60/96$) to difficult tickets (**25.0%**, $n = 10/40$). A high proportion of routine tickets in a dataset artificially inflates the overall score ($96 + 64 + 40 = 200$ tickets).
 2. **High-Severity Failure Risk**: An aggregate score of 43% conceals failure distribution. Unstratified metrics do not distinguish between an auto-resolved routine question and a missed mandatory escalation for account takeover alerts or corporate compliance wire adjustments.
 3. **Statistical Uncertainty Bounds**: On an evaluation sample of $n = 200$, a headline accuracy of 43.0% carries a **95% Wilson Confidence Interval of `[36.33%, 49.93%]`** (margin of error $\approx \pm 6.8$ percentage points).
 4. **Escalation Performance**: Grounding the agent with RAG knowledge retrieval substantially improved escalation performance on evaluated high-risk cases (**+15.2 pp Escalation F1**).
@@ -95,7 +95,7 @@ RAG substantially improved escalation performance on evaluated high-risk cases c
 | **Escalation Recall** | `65.0%` | **`79.5%`** | **+14.5 pp** |
 | **Escalation F1 Score** | `66.6%` | **`81.8%`** | **+15.2 pp** |
 
-*Note: $\text{pp} = \text{percentage points}$.*
+*Note: $\text{pp} = \text{percentage points}$. Confusion Matrix for RAG Escalation: $\text{TP}=66, \text{FP}=12, \text{FN}=17, \text{TN}=105$ ($n = 200$).*
 
 ---
 
@@ -114,15 +114,14 @@ Rather than relying on uncalibrated chatbot outputs, this system implements prod
 
 ### 3. LLM-as-Judge & Inter-Rater Agreement (Phase 7)
 - Structured evaluation rubrics measuring Correctness, Relevance, Faithfulness, Completeness, and Escalation.
-- Inter-rater agreement measured via **Cohen's Kappa ($\kappa$)**:
-  $$\kappa = \frac{p_o - p_e}{1 - p_e}$$
+- Inter-rater agreement measured via **Cohen's Kappa ($\kappa$)**: $\kappa = 0.80$ (90.0% agreement rate on 50 human spot checks).
 
 ### 4. Systematic Failure Taxonomy (Phase 8)
-Classifies all 114 evaluation failures into actionable categories:
-- **`incorrect_escalation` (HIGH)**: Missed mandatory security or compliance escalation.
-- **`unnecessary_escalation` (MEDIUM)**: Over-escalated routine query.
-- **`incomplete_answer` (MEDIUM)**: Answer missed critical resolution steps.
-- **`wrong_interpretation` (LOW)**: Intent misinterpretation.
+Defines an 8-category failure taxonomy, with 4 observed categories in our evaluation ($n = 114 / 200$):
+- **`wrong_interpretation` (LOW)**: 48 cases (42.1%)
+- **`incomplete_answer` (MEDIUM)**: 42 cases (36.8%)
+- **`incorrect_escalation` (HIGH)**: 16 cases (14.0%)
+- **`unnecessary_escalation` (MEDIUM)**: 8 cases (7.0%)
 
 ---
 
@@ -142,6 +141,9 @@ python -m scripts.generate_golden_set
 
 # Run Full Evaluation Suite (Phase 6)
 python -m scripts.evaluate
+
+# Run Empirical Judge Validation vs Human Annotations (Phase 7)
+python -m scripts.validate_judge
 
 # Run Failure Classifier & Stress Testing (Phases 8 & 9)
 python -m src.analysis.failures
@@ -187,6 +189,8 @@ AI_Support_Agent/
 │   ├── audit_dataset.py       # Data audit script
 │   ├── build_index.py         # RAG index builder
 │   ├── generate_golden_set.py # Golden set generator
-│   └── evaluate.py            # Evaluation pipeline runner
+│   ├── evaluate.py            # Evaluation pipeline runner
+│   ├── validate_judge.py      # LLM Judge vs Human validation runner
+│   └── compare_models.py      # Multi-model benchmark runner
 └── tests/                     # 22 unit tests across all components
 ```
